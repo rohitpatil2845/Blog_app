@@ -1,0 +1,45 @@
+CREATE DATABASE IF NOT EXISTS blogapp;
+
+USE blogapp;
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255),
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS blogs (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    published BOOLEAN DEFAULT FALSE,
+    status VARCHAR(50) DEFAULT 'draft',
+    cover_image TEXT,
+    author_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS blog_media (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    blog_id INT NOT NULL,
+    media_type ENUM('image', 'video', 'audio') NOT NULL,
+    media_url TEXT NOT NULL,
+    caption TEXT,
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (blog_id) REFERENCES blogs(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS saved_posts (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    blog_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (blog_id) REFERENCES blogs(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_blog (user_id, blog_id)
+);

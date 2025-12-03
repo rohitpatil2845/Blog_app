@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: blogapp-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DB_HOST
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        value: blogapp
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 3000
+
+databases:
+  - name: blogapp-db
+    databaseName: blogapp
+    user: blogapp_user

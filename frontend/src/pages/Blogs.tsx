@@ -27,11 +27,12 @@ export const Blogs = () => {
         <div  className="flex justify-center">
             <div>
                 {blogs.map(blog => <BlogCard
+                    key={blog.id}
                     id={blog.id}
                     authorName={blog.author.name || "Anonymous"}
                     title={blog.title}
                     content={blog.content}
-                    publishedDate={"2nd Feb 2024"}
+                    publishedDate={blog.createdAt ? new Date(blog.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : "Unknown date"}
                 />)}
             </div>
         </div>

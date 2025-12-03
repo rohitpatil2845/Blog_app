@@ -2,26 +2,24 @@ import { useEffect, useState } from "react"
 import axios from "axios";
 import { BACKEND_URL } from "../config";
 
-export interface MediaItem {
-    id?: number;
-    type: 'image' | 'video' | 'audio';
-    url: string;
-    caption?: string;
-}
 
 export interface Blog {
     "content": string;
     "title": string;
     "id": number;
-    "authorId"?: number;
     "status"?: string;
     "coverImage"?: string;
+    "authorId"?: number;
     "createdAt"?: string;
     "updatedAt"?: string;
-    "media"?: MediaItem[];
+    "media"?: Array<{
+        id?: number;
+        type: 'image' | 'video' | 'audio';
+        url: string;
+        caption?: string;
+    }>;
     "author": {
-        "name": string;
-        "email"?: string;
+        "name": string
     }
 }
 
@@ -47,6 +45,7 @@ export const useBlog = ({ id }: { id: string }) => {
     }
 
 }
+
 export const useBlogs = () => {
     const [loading, setLoading] = useState(true);
     const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -105,7 +104,7 @@ export const useSavedPosts = () => {
     const [loading, setLoading] = useState(true);
     const [posts, setPosts] = useState<Blog[]>([]);
 
-    const fetchPosts = () => {
+    const fetchSavedPosts = () => {
         setLoading(true);
         axios.get(`${BACKEND_URL}/api/v1/blog/user/saved`, {
             headers: {
@@ -123,12 +122,12 @@ export const useSavedPosts = () => {
     };
 
     useEffect(() => {
-        fetchPosts();
+        fetchSavedPosts();
     }, []);
 
     return {
         loading,
         posts,
-        refetch: fetchPosts
+        refetch: fetchSavedPosts
     }
 }

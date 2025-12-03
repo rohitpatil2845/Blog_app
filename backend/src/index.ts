@@ -9,7 +9,11 @@ export const app = new Hono<{
         JWT_SECRET: string;
     }
 }>();
-app.use("/*", cors())
+app.use("/*", cors({
+    origin: '*',
+    allowHeaders: ['Content-Type', 'Authorization'],
+    allowMethods: ['POST', 'GET', 'PUT', 'DELETE', 'OPTIONS'],
+}))
 app.route("/api/v1/user",userRouter);
 app.route("/api/v1/blog",blogRouter);
 
