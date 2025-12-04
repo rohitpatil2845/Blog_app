@@ -26,7 +26,7 @@ export const MyPosts = () => {
         }
     };
 
-    const getStatusBadge = (status: string) => {
+    const getStatusBadge = (status: string | undefined) => {
         switch (status) {
             case 'published':
                 return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -38,7 +38,7 @@ export const MyPosts = () => {
                 </span>;
             default:
                 return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    <FileText size={14} /> {status}
+                    <FileText size={14} /> {status || 'Unknown'}
                 </span>;
         }
     };
