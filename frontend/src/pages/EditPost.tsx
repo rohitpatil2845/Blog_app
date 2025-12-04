@@ -1,7 +1,7 @@
 import axios from "axios";
 import { BACKEND_URL } from "../config";
 import { useNavigate, useParams } from "react-router-dom";
-import { useState, type ChangeEvent, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Appbar } from "../component/Appbar";
 import { useBlog } from "../hooks";
 import { Image, Video, Music, Upload, X, Save } from "lucide-react";
@@ -31,7 +31,7 @@ export const EditPost = () => {
             setDescription(blog.content);
             setCoverImage(blog.coverImage || "");
             setMedia(blog.media || []);
-            setStatus(blog.status || 'draft');
+            setStatus((blog.status === 'published' ? 'published' : 'draft') as 'draft' | 'published');
         }
     }, [blog]);
 
@@ -49,7 +49,7 @@ export const EditPost = () => {
 
     const handleSave = async (publishStatus: 'draft' | 'published') => {
         try {
-            const response = await axios.put(`${BACKEND_URL}/api/v1/blog`, {
+            await axios.put(`${BACKEND_URL}/api/v1/blog`, {
                 id,
                 title,
                 content: description,

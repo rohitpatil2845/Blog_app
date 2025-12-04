@@ -1,9 +1,9 @@
 import axios from "axios";
 import { BACKEND_URL } from "../config";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { Appbar } from "../component/Appbar";
-import { Image, Video, Music, Upload, X } from "lucide-react";
+import { Upload, X } from "lucide-react";
 
 interface MediaItem {
     type: 'image' | 'video' | 'audio';
@@ -217,7 +217,6 @@ export const Publish = () => {
         </div>
     </div>
 }
-
 
 function TextEditor({ onChange }: {onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void}) {
     return <div className="mt-2">

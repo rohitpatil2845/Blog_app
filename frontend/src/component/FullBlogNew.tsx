@@ -131,7 +131,7 @@ export const FullBlogNew = ({ blog }: {blog: Blog}) => {
                         
                         {/* Meta Info */}
                         <div className="text-slate-500 pt-2 pb-6 border-b border-gray-200">
-                            Posted on {new Date(blog.createdAt).toLocaleDateString('en-US', { 
+                            Posted on {new Date(blog.createdAt || new Date()).toLocaleDateString('en-US', { 
                                 year: 'numeric', 
                                 month: 'long', 
                                 day: 'numeric' 
