@@ -22,24 +22,24 @@ router.post('/signup', async (req, res) => {
         }
 
         // Check if user already exists
-        const existingUsers = await db.query(
+        const [existingUsers] = await db.query(
             'SELECT * FROM users WHERE email = ?',
             [body.email]
         );
 
-        if (existingUsers.rows.length > 0) {
+        if (existingUsers.length > 0) {
             return res.status(409).json({
                 text: "User already exists with this email"
             });
         }
 
         // Insert new user
-        const result = await db.query(
+        const [result] = await db.query(
             'INSERT INTO users (email, password, name) VALUES (?, ?, ?)',
             [body.email, body.password, body.name || null]
         );
 
-        const userId = result.rows[0].id;
+        const userId = result.insertId;
 
         const token = jwt.sign(
             { id: userId },
@@ -69,18 +69,18 @@ router.post('/signin', async (req, res) => {
             });
         }
 
-        const users = await db.query(
+        const [users] = await db.query(
             'SELECT * FROM users WHERE email = ? AND password = ?',
             [body.email, body.password]
         );
 
-        if (users.rows.length === 0) {
+        if (users.length === 0) {
             return res.status(403).json({
                 text: "User not found or incorrect credentials"
             });
         }
 
-        const user = users.rows[0];
+        const user = users[0];
         const token = jwt.sign(
             { id: user.id },
             process.env.JWT_SECRET || 'rohit-blog-app'
@@ -109,18 +109,18 @@ router.get('/me', async (req, res) => {
         const decoded = jwt.verify(authHeader, process.env.JWT_SECRET || 'rohit-blog-app');
         const userId = decoded.id;
 
-        const users = await db.query(
+        const [users] = await db.query(
             'SELECT id, email, name, created_at FROM users WHERE id = ?',
             [userId]
         );
 
-        if (users.rows.length === 0) {
+        if (users.length === 0) {
             return res.status(404).json({
                 message: "User not found"
             });
         }
 
-        res.json({ user: users.rows[0] });
+        res.json({ user: users[0] });
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({

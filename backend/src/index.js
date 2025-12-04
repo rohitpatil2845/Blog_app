@@ -22,12 +22,13 @@ app.use('/api/v1/blog', blogRouter);
 
 // Initialize database tables
 async function initDatabase() {
-  const client = await db.connect();
   try {
+    const connection = await db.getConnection();
+    
     // Create users table
-    await client.query(`
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
+        id INT PRIMARY KEY AUTO_INCREMENT,
         email VARCHAR(255) UNIQUE NOT NULL,
         name VARCHAR(255),
         password VARCHAR(255) NOT NULL,
@@ -36,52 +37,64 @@ async function initDatabase() {
     `);
 
     // Create blogs table
-    await client.query(`
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS blogs (
-        id SERIAL PRIMARY KEY,
+        id INT PRIMARY KEY AUTO_INCREMENT,
         title VARCHAR(255) NOT NULL,
         content TEXT NOT NULL,
-        status VARCHAR(50) DEFAULT 'draft',
-        cover_image VARCHAR(500) DEFAULT NULL,
-        author_id INTEGER NOT NULL,
+        -- status/cover_image may be added later for older DBs; ensure compatibility below
+        author_id INT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
       )
     `);
 
-    // Create blog_media table
-    await client.query(`
+    // Ensure `status` column exists (some older DBs may not have it)
+    const [statusCol] = await connection.query("SHOW COLUMNS FROM blogs LIKE 'status'");
+    if (!statusCol || statusCol.length === 0) {
+      await connection.query("ALTER TABLE blogs ADD COLUMN status ENUM('draft','published','private') DEFAULT 'draft'");
+      console.log('ℹ️ Added missing `status` column to `blogs`');
+    }
+
+    // Ensure `cover_image` column exists
+    const [coverCol] = await connection.query("SHOW COLUMNS FROM blogs LIKE 'cover_image'");
+    if (!coverCol || coverCol.length === 0) {
+      await connection.query("ALTER TABLE blogs ADD COLUMN cover_image VARCHAR(500) DEFAULT NULL");
+      console.log('ℹ️ Added missing `cover_image` column to `blogs`');
+    }
+
+    // Create blog_media table if not exists
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS blog_media (
-        id SERIAL PRIMARY KEY,
-        blog_id INTEGER NOT NULL,
-        media_type VARCHAR(20) NOT NULL CHECK (media_type IN ('image','video','audio')),
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        blog_id INT NOT NULL,
+        media_type ENUM('image','video','audio') NOT NULL,
         media_url TEXT NOT NULL,
         caption TEXT,
-        display_order INTEGER DEFAULT 0,
+        display_order INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (blog_id) REFERENCES blogs(id) ON DELETE CASCADE
       )
     `);
 
-    // Create saved_posts table
-    await client.query(`
+    // Create saved_posts table if not exists
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS saved_posts (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL,
-        blog_id INTEGER NOT NULL,
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        blog_id INT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (blog_id) REFERENCES blogs(id) ON DELETE CASCADE,
-        UNIQUE (user_id, blog_id)
+        UNIQUE KEY unique_user_blog (user_id, blog_id)
       )
     `);
 
+    connection.release();
     console.log('✅ Database tables initialized successfully');
   } catch (error) {
     console.error('❌ Error initializing database:', error);
-  } finally {
-    client.release();
   }
 }
 

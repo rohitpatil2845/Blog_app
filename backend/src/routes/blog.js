@@ -28,18 +28,18 @@ const authMiddleware = (req, res, next) => {
 
 // Create a blog post (protected)
 router.post('/', authMiddleware, async (req, res) => {
-    const connection = await db.connect();
+    const connection = await db.getConnection();
     try {
-        await connection.query('BEGIN');
+        await connection.beginTransaction();
         
         const body = req.body;
         
-        const result = await connection.query(
+        const [result] = await connection.query(
             'INSERT INTO blogs (title, content, author_id, status, cover_image) VALUES (?, ?, ?, ?, ?)',
             [body.title, body.content, req.userId, body.status || 'draft', body.coverImage || null]
         );
 
-        const blogId = result.rows[0].id;
+        const blogId = result.insertId;
 
         // Insert media if provided
         if (body.media && Array.isArray(body.media)) {
@@ -52,14 +52,14 @@ router.post('/', authMiddleware, async (req, res) => {
             }
         }
 
-        await connection.query('COMMIT');
+        await connection.commit();
 
         res.json({
             id: blogId,
             message: "Blog created successfully"
         });
     } catch (error) {
-        await connection.query('ROLLBACK');
+        await connection.rollback();
         console.error('Error:', error);
         res.status(500).json({
             message: "Error creating blog"
@@ -71,26 +71,26 @@ router.post('/', authMiddleware, async (req, res) => {
 
 // Update a blog post (protected)
 router.put('/', authMiddleware, async (req, res) => {
-    const connection = await db.connect();
+    const connection = await db.getConnection();
     try {
-        await connection.query('BEGIN');
+        await connection.beginTransaction();
         
         const body = req.body;
         
-        const result = await connection.query(
+        const [result] = await connection.query(
             'UPDATE blogs SET title = ?, content = ?, status = ?, cover_image = ? WHERE id = ? AND author_id = ?',
             [body.title, body.content, body.status || 'draft', body.coverImage || null, body.id, req.userId]
         );
 
-        if (result.rowCount === 0) {
-            await connection.query('ROLLBACK');
+        if (result.affectedRows === 0) {
+            await connection.rollback();
             return res.status(404).json({
                 message: "Blog not found or you don't have permission to update"
             });
         }
 
         // Delete existing media and insert new ones
-        await connection.query('DELETE FROM blog_media WHERE blog_id = $1', [body.id]);
+        await connection.query('DELETE FROM blog_media WHERE blog_id = ?', [body.id]);
 
         if (body.media && Array.isArray(body.media)) {
             for (let i = 0; i < body.media.length; i++) {
@@ -102,14 +102,14 @@ router.put('/', authMiddleware, async (req, res) => {
             }
         }
 
-        await connection.query('COMMIT');
+        await connection.commit();
 
         res.json({
             id: body.id,
             message: "Blog updated successfully"
         });
     } catch (error) {
-        await connection.query('ROLLBACK');
+        await connection.rollback();
         console.error('Error:', error);
         res.status(500).json({
             message: "Error updating blog"
@@ -124,12 +124,12 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const id = req.params.id;
         
-        const result = await db.query(
+        const [result] = await db.query(
             'DELETE FROM blogs WHERE id = ? AND author_id = ?',
             [id, req.userId]
         );
 
-        if (result.rowCount === 0) {
+        if (result.affectedRows === 0) {
             return res.status(404).json({
                 message: "Blog not found or you don't have permission to delete"
             });
@@ -149,7 +149,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 // Get user's own blogs (protected)
 router.get('/user/posts', authMiddleware, async (req, res) => {
     try {
-        const blogs = await db.query(`
+        const [blogs] = await db.query(`
             SELECT 
                 b.id,
                 b.title,
@@ -192,7 +192,7 @@ router.get('/user/posts', authMiddleware, async (req, res) => {
 // Get all blogs (only published)
 router.get('/bulk', async (req, res) => {
     try {
-        const blogs = await db.query(`
+        const [blogs] = await db.query(`
             SELECT 
                 b.id,
                 b.title,
@@ -235,7 +235,7 @@ router.get('/:id', async (req, res) => {
     try {
         const id = req.params.id;
 
-        const blogs = await db.query(`
+        const [blogs] = await db.query(`
             SELECT 
                 b.id,
                 b.title,
@@ -251,21 +251,21 @@ router.get('/:id', async (req, res) => {
             WHERE b.id = ?
         `, [id]);
 
-        if (blogs.rows.length === 0) {
+        if (blogs.length === 0) {
             return res.status(404).json({
                 message: "Blog not found"
             });
         }
 
         // Get media for this blog
-        const media = await db.query(`
+        const [media] = await db.query(`
             SELECT id, media_type, media_url, caption, display_order
             FROM blog_media
             WHERE blog_id = ?
             ORDER BY display_order ASC
         `, [id]);
 
-        const blog = blogs.rows[0];
+        const blog = blogs[0];
         res.json({
             blog: {
                 id: blog.id,
@@ -340,7 +340,7 @@ router.delete('/:id/save', authMiddleware, async (req, res) => {
 // Get saved posts (protected)
 router.get('/user/saved', authMiddleware, async (req, res) => {
     try {
-        const blogs = await db.query(`
+        const [blogs] = await db.query(`
             SELECT 
                 b.id,
                 b.title,
@@ -384,13 +384,13 @@ router.get('/:id/is-saved', authMiddleware, async (req, res) => {
     try {
         const blogId = req.params.id;
         
-        const result = await db.query(
+        const [result] = await db.query(
             'SELECT id FROM saved_posts WHERE user_id = ? AND blog_id = ?',
             [req.userId, blogId]
         );
 
         res.json({
-            isSaved: result.rows.length > 0
+            isSaved: result.length > 0
         });
     } catch (error) {
         console.error('Error:', error);
