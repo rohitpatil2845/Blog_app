@@ -22,24 +22,24 @@ router.post('/signup', async (req, res) => {
         }
 
         // Check if user already exists
-        const [existingUsers] = await db.query(
-            'SELECT * FROM users WHERE email = ?',
+        const existingUsers = await db.query(
+            'SELECT * FROM users WHERE email = $1',
             [body.email]
         );
 
-        if (existingUsers.length > 0) {
+        if (existingUsers.rows.length > 0) {
             return res.status(409).json({
                 text: "User already exists with this email"
             });
         }
 
         // Insert new user
-        const [result] = await db.query(
-            'INSERT INTO users (email, password, name) VALUES (?, ?, ?)',
+        const result = await db.query(
+            'INSERT INTO users (email, password, name) VALUES ($1, $2, $3) RETURNING id',
             [body.email, body.password, body.name || null]
         );
 
-        const userId = result.insertId;
+        const userId = result.rows[0].id;
 
         const token = jwt.sign(
             { id: userId },
@@ -69,18 +69,18 @@ router.post('/signin', async (req, res) => {
             });
         }
 
-        const [users] = await db.query(
-            'SELECT * FROM users WHERE email = ? AND password = ?',
+        const users = await db.query(
+            'SELECT * FROM users WHERE email = $1 AND password = $2',
             [body.email, body.password]
         );
 
-        if (users.length === 0) {
+        if (users.rows.length === 0) {
             return res.status(403).json({
                 text: "User not found or incorrect credentials"
             });
         }
 
-        const user = users[0];
+        const user = users.rows[0];
         const token = jwt.sign(
             { id: user.id },
             process.env.JWT_SECRET || 'rohit-blog-app'
@@ -109,18 +109,18 @@ router.get('/me', async (req, res) => {
         const decoded = jwt.verify(authHeader, process.env.JWT_SECRET || 'rohit-blog-app');
         const userId = decoded.id;
 
-        const [users] = await db.query(
-            'SELECT id, email, name, created_at FROM users WHERE id = ?',
+        const users = await db.query(
+            'SELECT id, email, name, created_at FROM users WHERE id = $1',
             [userId]
         );
 
-        if (users.length === 0) {
+        if (users.rows.length === 0) {
             return res.status(404).json({
                 message: "User not found"
             });
         }
 
-        res.json({ user: users[0] });
+        res.json({ user: users.rows[0] });
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({
