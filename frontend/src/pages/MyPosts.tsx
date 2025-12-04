@@ -93,7 +93,7 @@ export const MyPosts = () => {
                                             {getStatusBadge(post.status)}
                                         </div>
                                         <p className="text-gray-600 line-clamp-2 mb-3">
-                                            {post.content?.substring(0, 150) || ''}...
+                                            {(post.content || '').substring(0, 150)}...
                                         </p>
                                         <div className="flex items-center gap-4 text-sm text-gray-500">
                                             <span>Created: {new Date(post.createdAt || new Date()).toLocaleDateString()}</span>

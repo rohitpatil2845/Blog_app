@@ -20,7 +20,6 @@ export const EditPost = () => {
     const [description, setDescription] = useState("");
     const [coverImage, setCoverImage] = useState("");
     const [media, setMedia] = useState<MediaItem[]>([]);
-    const [status, setStatus] = useState<'draft' | 'published'>('draft');
     const [mediaUrl, setMediaUrl] = useState("");
     const [mediaType, setMediaType] = useState<'image' | 'video' | 'audio'>('image');
     const [mediaCaption, setMediaCaption] = useState("");
@@ -31,7 +30,6 @@ export const EditPost = () => {
             setDescription(blog.content);
             setCoverImage(blog.coverImage || "");
             setMedia(blog.media || []);
-            setStatus((blog.status === 'published' ? 'published' : 'draft') as 'draft' | 'published');
         }
     }, [blog]);
 

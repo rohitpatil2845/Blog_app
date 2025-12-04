@@ -218,7 +218,7 @@ export const Publish = () => {
     </div>
 }
 
-function TextEditor({ onChange }: {onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void}) {
+export function TextEditor({ onChange }: {onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void}) {
     return <div className="mt-2">
         <div className="w-full mb-4 ">
             <div className="flex items-center justify-between border">
